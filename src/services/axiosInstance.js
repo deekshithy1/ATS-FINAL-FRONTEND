@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL:  'https://atstesting.netlify.app/api',
+  baseURL:  'https://ats-final-backend.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
