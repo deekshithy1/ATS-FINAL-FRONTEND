@@ -1,6 +1,6 @@
 import React from "react";
 
-const VISUAL_TEST_RULES = [
+export const VISUAL_TEST_RULES = [
   { key: "rule189_3i", label: "Registration Plate (Rule 189 (3)(i))" },
   { key: "rule189_7_Visual", label: "Reflectors (Rule 189 (7))" },
   { key: "rule189_8a", label: "Headlamp Beam Height (Rule 189 (8)(a))" },

@@ -54,14 +54,21 @@ const Vehicles = () => {
 
 
   useEffect(() => {
-    const filteredList = vehicles.filter((v) =>
+    let filteredList = vehicles.filter((v) =>
       v.bookingId.toLowerCase().includes(searchTerm.toLowerCase())
     );
+  
+    // If Technician, show only IN_PROGRESS vehicles
+    if (user?.role === "TECHNICIAN") {
+      filteredList = filteredList.filter((v) => v.status === "IN_PROGRESS");
+    }
+  
     setFiltered(filteredList);
     setCurrentPage(1);
-  }, [searchTerm, vehicles]);
+  }, [searchTerm, vehicles, user?.role]);
+  
 
-
+console.log(filtered.filter(v=>v.status==="IN_PROGRESS"))
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const pageStartIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const visibleData = filtered.slice(
@@ -107,7 +114,7 @@ const Vehicles = () => {
     for (let i = startPage; i <= endPage; i++) pages.push(i);
     return pages;
   };
- 
+
  
  
   
@@ -177,7 +184,7 @@ const Vehicles = () => {
                 <td className="px-5 py-4">
                   <div className="flex justify-center gap-2">
                     {/* Actions based on vehicle status */}
-                    {vehicle.status === "PENDING" && (
+                   {vehicle.status === "PENDING"  &&(
                       <button
                         onClick={() => {handleStartTest(vehicle.bookingId),handleClick(vehicle.regnNo)}}
                         className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded transition-colors duration-200"

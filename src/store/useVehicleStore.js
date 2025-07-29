@@ -45,7 +45,7 @@ export const useVehicleStore = create((set, get) => ({
   fetchTodayVehicles: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await axios.get("/vehicles/all");
+      const res = await axiosInstance.get("/vehicles/all");
       console.log(res.data);
       set({ vehicles: res.data, loading: false });
     } catch (err) {

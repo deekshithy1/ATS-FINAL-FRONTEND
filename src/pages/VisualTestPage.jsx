@@ -4,7 +4,7 @@ import VehicleSelection from "../components/VehicleSelection";
 import VehicleDetails from "../components/VehicleDetails";
 import VisualTestForm from "../components/VisualTestForm";
 import AlertMessage from "../components/AlertMessage";
-
+import { VISUAL_TEST_RULES } from "../components/VisualTestForm";
 const VisualTestPage = () => {
   const {
     vehicles,
@@ -91,28 +91,31 @@ const VisualTestPage = () => {
       setError("Please select a vehicle first");
       return;
     }
-
-    // Check if at least one rule is set
-    const hasRules = Object.keys(visualRules).length > 0;
-    if (!hasRules) {
-      setError("Please set at least one visual test result");
+  
+    // Ensure all required rules are filled
+    const allRulesFilled = VISUAL_TEST_RULES.every(
+      (rule) => visualRules[rule.key] && visualRules[rule.key] !== ""
+    );
+  
+    if (!allRulesFilled) {
+      setError("Please fill in all visual test results before submitting.");
       return;
     }
-
+  
     setSubmitting(true);
     setError("");
     setSuccess("");
-    
+  
     try {
       const res = await submitVisualTest();
       setSuccess(res.message || "Visual test submitted successfully!");
-      
-      // Reset everything and show vehicle selection again
+  
+      // Reset form state
       setSelectedRegnNo("");
       resetVisualRules();
       setShowVehicleSelection(true);
-      
-      // Refresh pending vehicles list
+  
+      // Refresh vehicle list
       await loadPendingVehicles();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to submit visual test");
@@ -120,6 +123,7 @@ const VisualTestPage = () => {
       setSubmitting(false);
     }
   };
+  
 
   const handleReset = () => {
     setSelectedRegnNo("");
