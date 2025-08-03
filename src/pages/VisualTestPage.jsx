@@ -53,6 +53,39 @@ const VisualTestPage = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  const handleApproveALL = async () => {
+    if (!selectedVehicle) {
+      setError("Please select a vehicle first");
+      return;
+    }
+  
+    // Mark all rules as "P" (Pass)
+    const approvedRules = {};
+    VISUAL_TEST_RULES.forEach(rule => {
+      approvedRules[rule.key] = "P";
+    });
+  
+    setVisualRules(approvedRules); // <- Updates Zustand store state
+    setError("");
+    setSuccess("");
+  
+    setSubmitting(true);
+    try {
+      const res = await submitVisualTest(); // <- Will use updated visualRules from Zustand
+      setSuccess(res.message || "All rules approved and test submitted!");
+  
+      // Reset UI state
+      setSelectedRegnNo("");
+      resetVisualRules();
+      setShowVehicleSelection(true);
+      await loadPendingVehicles(); // Refresh vehicle list
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to submit visual test");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  
   const loadPendingVehicles = async () => {
     setLoading(true);
     setError("");
@@ -184,6 +217,7 @@ const VisualTestPage = () => {
                 onCancel={handleReset}
                 onClearForm={() => resetVisualRules()}
                 submitting={submitting}
+                handleApproveALL={handleApproveALL}
               />
             </div>
           )}
