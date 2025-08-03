@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import pattern from '../assets/Pattern 01.png';
-import {useAuthStore} from '../store/useAuthStore.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 import { useNavigate } from 'react-router-dom';
 import axios from '../services/axiosInstance';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
@@ -20,6 +22,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
       const res = await axios.post('/auth/login', formData);
@@ -29,6 +32,8 @@ const Login = () => {
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,7 +54,7 @@ const Login = () => {
           <p className="font-bold text-[#082777] text-[18px] text-start">
             Welcome to ATS Management System
           </p>
-          <h1 className="text-3xl  text-[#2E4C98] text-[36px] font-light">
+          <h1 className="text-3xl text-[#2E4C98] text-[36px] font-light">
             Start Tracking. Stay Ahead.
           </h1>
         </div>
@@ -102,9 +107,21 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-72 bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 transition"
+              disabled={isLoading}
+              className={`w-72 py-4 rounded-xl transition text-white flex justify-center items-center gap-2 ${
+                isLoading
+                  ? 'bg-blue-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
-              Login
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Logging in...
+                </>
+              ) : (
+                'Login'
+              )}
             </button>
           </form>
         </div>
