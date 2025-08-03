@@ -10,5 +10,12 @@ export const useAtsStore=create((set)=>({
     },
     addATS:async(atsData)=>{
         const response =await axiosInstance.post("/centers/createnew",atsData)
-    }
+    },
+    // blockUser:async(email)=>{
+    //     const response=await axiosInstance.post("/users/unblockUser",email);
+    // },
+    // unblockUser:async(email)=>{
+    //     const response=await axiosInstance.post("/users/unblockUser",email);
+    // },
 }))
+

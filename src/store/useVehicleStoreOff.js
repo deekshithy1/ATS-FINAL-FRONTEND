@@ -13,7 +13,6 @@ export const useVehiclestore = create((set) => ({
 
   getVehiclesById: async (id) => {
     const response = await axiosInstance.get(`/vehicles/getVehicles/${id}`); // ✅ fixed
-    console.log(response)
     set({ vehiclesByAts: response.data });
   },
 

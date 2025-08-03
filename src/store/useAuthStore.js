@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "../services/axiosInstance";
 
- export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   token: localStorage.getItem("token") || null,
   loading: false,
@@ -15,6 +15,7 @@ import axios from "../services/axiosInstance";
   logout: () => {
     localStorage.removeItem("token");
     set({ user: null, token: null });
+    window.location.href = "/login"; // immediate redirect
   },
 
   login: ({ token, user }) => {
@@ -31,7 +32,19 @@ import axios from "../services/axiosInstance";
       const res = await axios.get("/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      set({ user: res.data, loading: false });
+
+      const user = res.data;
+
+      // ✅ Check if ATS center is suspended
+      if (user?.atsCenter?.isSuspended === true) {
+        console.warn("ATS center is suspended. Logging out...");
+        localStorage.removeItem("token");
+        set({ user: null, token: null, loading: false });
+        window.location.href = "/login";
+        return;
+      }
+
+      set({ user, loading: false });
     } catch (err) {
       console.error("Fetch user failed:", err);
       localStorage.removeItem("token");
@@ -39,4 +52,3 @@ import axios from "../services/axiosInstance";
     }
   },
 }));
-

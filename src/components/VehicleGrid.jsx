@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
+import axiosInstance from "../services/axiosInstance";
 
 const VehicleGrid = ({ vehicles, onVehicleSelect, loading, disabled }) => {
+
+ 
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -17,7 +20,7 @@ const VehicleGrid = ({ vehicles, onVehicleSelect, loading, disabled }) => {
       </div>
     );
   }
-
+console.log(vehicles)
   return (
     <div className="grid grid-cols-5 gap-3 mb-6">
       {vehicles.map((regnNo, index) => (

@@ -32,6 +32,7 @@ const VisualTestPage = () => {
   useEffect(() => {
     loadPendingVehicles();
   }, []);
+  console.log(vehicles)
 
   // Filter vehicles based on search term
   const filteredVehicles = useMemo(() => {

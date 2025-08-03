@@ -13,4 +13,35 @@ export const useUserStore = create((set) => ({
     }
   },
   setUsersNull: () => set({ users: [] }),
+  blockUser:async(email)=>{
+    try{
+      const response=await axiosInstance.post("/users/blockUser",{email});
+    
+    }
+    catch(err)
+    {
+      console.log(err);
+    }
+  },
+  unblockUser:async(email)=>{
+    try{
+      const response=await axiosInstance.post("/users/unblockUser",{email});
+    
+    }
+    catch(err)
+    {
+      console.log(err);
+    }
+  },
+ addAdmin:async(formData)=>{
+  try{
+    const response=await axiosInstance.post("/users/ats-admin",formData)
+  }
+  catch(err)
+  {
+    console.log(err);
+  }
+ },
+
+
 }));

@@ -25,7 +25,17 @@ fetchPendingVisualVehicles: async () => {
     set({ vehicles: [] });
   }
 },
+fetchPendingVisualVehiclesatATS:async()=>{
+   
+  try{
 
+    const res=await axiosInstance.get("/tests/visual/pendingVehicles");
+    set({vehicles:res.data});
+  }
+  catch(err){
+   console.log("error");
+  }
+},
 
   fetchVehicleByRegn: async (regnNo) => {
     try {

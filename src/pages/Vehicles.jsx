@@ -6,6 +6,7 @@ import AddVehicleModal from "../components/AddVehicleModal";
 import dayjs from "dayjs";
 import axiosInstance from "../services/axiosInstance";
 import { useNavigate } from "react-router-dom";
+import useTestStore from "../store/useTestStore";
 
 const statusColor = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -40,12 +41,11 @@ const Vehicles = () => {
     }
   };
 
+  // Initial fetch based on selected date
   useEffect(() => {
     if (selectedDate === dayjs().format("YYYY-MM-DD")) {
-      // If selected date is today, use the existing function
       fetchTodayVehicles();
     } else {
-      // Fetch vehicles for the selected date
       fetchVehiclesByDate(selectedDate).then((data) => {
         useVehicleStore.setState({ vehicles: data });
       });
@@ -53,22 +53,50 @@ const Vehicles = () => {
   }, [selectedDate, fetchTodayVehicles]);
 
 
-  useEffect(() => {
-    let filteredList = vehicles.filter((v) =>
-      v.bookingId.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  
-    // If Technician, show only IN_PROGRESS vehicles
-    if (user?.role === "TECHNICIAN") {
-      filteredList = filteredList.filter((v) => v.status === "IN_PROGRESS");
-    }
-  
-    setFiltered(filteredList);
-    setCurrentPage(1);
-  }, [searchTerm, vehicles, user?.role]);
-  
+  const fetchVehicles=async()=>{
+    const res=await axiosInstance.get("/tests/visual/pendingVisuals");
+    console.log(res.data.pending)
+        return res.data.pending;
+   }
 
-console.log(filtered.filter(v=>v.status==="IN_PROGRESS"))
+  // Filtering logic
+  useEffect(() => {
+    let filteredList = [...vehicles];
+  
+    const applyFilter = async () => {
+      if (user?.role === "MVI") {
+        try {
+          const res = await fetchVehicles(); // ✅ await here
+          setFiltered(res); // ✅ this is now the correct pendingVisuals array
+        } catch (err) {
+          console.error("Failed to fetch MVI visual test vehicles:", err);
+          setFiltered([]);
+        }
+        return;
+      }
+  
+      if (user?.role === "TECHNICIAN") {
+        filteredList = filteredList.filter(
+          (v) =>
+            v.status !== "APPROVED" &&
+            v.status !== "COMPLETED" &&
+            v.status !== "SENT_TO_NIC"
+        );
+      }
+  
+      if (searchTerm.trim()) {
+        filteredList = filteredList.filter((v) =>
+          v.bookingId.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+  
+      setFiltered(filteredList);
+      setCurrentPage(1);
+    };
+  
+    applyFilter(); // ✅ run the async filtering
+  }, [vehicles, user?.role, searchTerm]);
+  
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const pageStartIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const visibleData = filtered.slice(
@@ -76,36 +104,22 @@ console.log(filtered.filter(v=>v.status==="IN_PROGRESS"))
     pageStartIndex + ITEMS_PER_PAGE
   );
 
-  const handleClick=async(bookingId)=>{
-     const res=await axiosInstance.post("/tests/start",{regnNo:bookingId})
-     
-    console.log(res)
-  }
-
-  const handleVisualTest = (bookingId) => {
-    // Navigate to visual test with booking ID
-    navigate(`/visualtest?bookingId=${bookingId}`);
+  // Handlers
+  const handleClick = async (regnNo) => {
+    try {
+      const res = await axiosInstance.post("/tests/start", { regnNo });
+      console.log(res);
+    } catch (error) {
+      console.error("Error starting test:", error);
+    }
   };
 
-  const handleFunctionalTest = (bookingId) => {
-    // Navigate to functional test with booking ID
-    navigate(`/functionaltest?bookingId=${bookingId}`);
-  };
+  const handleVisualTest = (bookingId) => navigate(`/visualtest?bookingId=${bookingId}`);
+  const handleFunctionalTest = (bookingId) => navigate(`/functionaltest?bookingId=${bookingId}`);
+  const handleStartTest = (bookingId) => navigate(`/tests?bookingId=${bookingId}`);
+  const handleApproval = (bookingId) => navigate(`/approvals?bookingId=${bookingId}`);
+  const handleReport = (bookingId) => navigate(`/reports?bookingId=${bookingId}`);
 
-  const handleStartTest = (bookingId) => {
-    // Navigate to tests page for pending vehicles
-    navigate(`/tests?bookingId=${bookingId}`);
-  };
-
-  const handleApproval = (bookingId) => {
-    // Navigate to approvals page for completed vehicles
-    navigate(`/approvals?bookingId=${bookingId}`);
-  };
-
-  const handleReport = (bookingId) => {
-    // Navigate to reports page for approved vehicles
-    navigate(`/reports?bookingId=${bookingId}`);
-  };
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 3;
@@ -115,15 +129,11 @@ console.log(filtered.filter(v=>v.status==="IN_PROGRESS"))
     return pages;
   };
 
- 
- 
-  
   return (
     <div className="p-6 bg-white rounded-xl shadow-md border border-gray-200">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
         <h2 className="text-2xl font-bold text-gray-900">Vehicle Management</h2>
         <div className="flex gap-3 w-full sm:w-auto">
-          {/* Date Picker */}
           <input
             type="date"
             value={selectedDate}
@@ -147,111 +157,125 @@ console.log(filtered.filter(v=>v.status==="IN_PROGRESS"))
           )}
         </div>
       </div>
+
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left text-gray-700">
-          <thead className="bg-gray-100 text-xs uppercase text-gray-500">
-            <tr>
-              <th className="px-5 py-3">Booking ID</th>
-              <th className="px-5 py-3">Regn No</th>
-              <th className="px-5 py-3">Engine No</th>
-              <th className="px-5 py-3">Chassis No</th>
-              <th className="px-5 py-3">Lane Entry</th>
-              <th className="px-5 py-3">Status</th>
-              <th className="px-5 py-3 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {visibleData.map((vehicle) => (
-              <tr key={vehicle._id} className="hover:bg-gray-50 transition">
-                <td className="px-5 py-4 font-medium">{vehicle.bookingId}</td>
-                <td className="px-5 py-4">{vehicle.regnNo}</td>
-                <td className="px-5 py-4">{vehicle.engineNo}</td>
-                <td className="px-5 py-4">{vehicle.chassisNo}</td>
-                <td className="px-5 py-4">
-                  {vehicle.laneEntryTime
-                    ? dayjs(vehicle.laneEntryTime).format("HH:mm A")
-                    : "-"}
-                </td>
-                <td className="px-5 py-4">
-                  <span
-                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                      statusColor[vehicle.status] || "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {vehicle.status}
-                  </span>
-                </td>
-                <td className="px-5 py-4">
-                  <div className="flex justify-center gap-2">
-                    {/* Actions based on vehicle status */}
-                   {vehicle.status === "PENDING"  &&(
-                      <button
-                        onClick={() => {handleStartTest(vehicle.bookingId),handleClick(vehicle.regnNo)}}
-                        className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded transition-colors duration-200"
-                        title="Start Test"
-                      >
-                        Start Test
-                      </button>
-                    )}
-                    
-                    {vehicle.status === "IN_PROGRESS" && (
-                      <>
-                        {/* Visual Test Button */}
-                        <button
-                          onClick={() => handleVisualTest(vehicle.bookingId)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded transition-colors duration-200"
-                          title="Visual Test"
-                        >
-                          Visual
-                        </button>
-                        
-                        {/* Functional Test Button */}
-                        <button
-                          onClick={() => handleFunctionalTest(vehicle.bookingId)}
-                          className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded transition-colors duration-200"
-                          title="Functional Test"
-                        >
-                          Functional
-                        </button>
-                      </>
-                    )}
-                    
-                    {vehicle.status === "COMPLETED" && (
-                      <button
-                        onClick={() => handleApproval(vehicle.bookingId)}
-                        className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded transition-colors duration-200"
-                        title="Go to Approval"
-                      >
-                        Approval
-                      </button>
-                    )}
-                    
-                    {vehicle.status === "APPROVED" && (
-                      <button
-                        onClick={() => handleReport(vehicle.bookingId)}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-3 py-1 rounded transition-colors duration-200"
-                        title="View Report"
-                      >
-                        Report
-                      </button>
-                    )}
-                    
-                    {vehicle.status === "FAILED" && (
-                      <button
-                        onClick={() => handleStartTest(vehicle.regnNo)}
-                        className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded transition-colors duration-200"
-                        title="Retry Test"
-                      >
-                        Retry
-                      </button>
-                    )}
-                  </div>
-                </td>
+        {filtered.length === 0 ? (
+          <div className="text-center text-gray-500 py-10">No vehicles found.</div>
+        ) : (
+          <table className="min-w-full text-sm text-left text-gray-700">
+            <thead className="bg-gray-100 text-xs uppercase text-gray-500">
+              <tr>
+                <th className="px-5 py-3">Booking ID</th>
+                <th className="px-5 py-3">Regn No</th>
+                <th className="px-5 py-3">Engine No</th>
+                <th className="px-5 py-3">Chassis No</th>
+                <th className="px-5 py-3">Lane Entry</th>
+                <th className="px-5 py-3">Status</th>
+                {!["ATS_OWNER"].includes(user?.role) && (
+  <th className="px-5 py-3 text-center">Actions</th>
+)}
+
+               
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {visibleData.map((vehicle) => (
+                <tr key={vehicle._id} className="hover:bg-gray-50 transition">
+                  <td className="px-5 py-4 font-medium">{vehicle.bookingId}</td>
+                  <td className="px-5 py-4">{vehicle.regnNo}</td>
+                  <td className="px-5 py-4">{vehicle.engineNo}</td>
+                  <td className="px-5 py-4">{vehicle.chassisNo}</td>
+                  <td className="px-5 py-4">
+                    {vehicle.laneEntryTime
+                      ? dayjs(vehicle.laneEntryTime).format("HH:mm A")
+                      : "-"}
+                  </td>
+                  <td className="px-5 py-4">
+                    <span
+                      className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                        statusColor[vehicle.status] || "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {vehicle.status}
+                    </span>
+                  </td>{ user.role!=="ATS_OWNER"  &&     <td className="px-5 py-4">
+                    <div className="flex justify-center gap-2">
+                      
+                      {vehicle.status === "PENDING" && (
+                        <button
+                          onClick={() => {
+                            handleStartTest(vehicle.bookingId);
+                            handleClick(vehicle.regnNo);
+                          }}
+                          className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded"
+                          title="Start Test"
+                        >
+                          Start Test
+                        </button>
+                      )}
+
+                      {vehicle.status === "IN_PROGRESS" && (
+                        <>
+                          {user?.role === "MVI" && (
+                            <button
+                              onClick={() => handleVisualTest(vehicle.bookingId)}
+                              className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                              title="Visual Test"
+                            >
+                              Visual
+                            </button>
+                          )}
+                          {(user?.role === "ATS_ADMIN" || user?.role === "TECHNICIAN") && (
+                            <button
+                              onClick={() => handleFunctionalTest(vehicle.bookingId)}
+                              className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded"
+                              title="Functional Test"
+                            >
+                              Functional
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      {vehicle.status === "COMPLETED" && (
+                        <button
+                          onClick={() => handleApproval(vehicle.bookingId)}
+                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded"
+                          title="Go to Approval"
+                        >
+                          Approval
+                        </button>
+                      )}
+
+                      {vehicle.status === "APPROVED" && (
+                        <button
+                          onClick={() => handleReport(vehicle.bookingId)}
+                          className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-3 py-1 rounded"
+                          title="View Report"
+                        >
+                          Report
+                        </button>
+                      )}
+
+                      {vehicle.status === "FAILED" && (
+                        <button
+                          onClick={() => handleStartTest(vehicle.regnNo)}
+                          className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded"
+                          title="Retry Test"
+                        >
+                          Retry
+                        </button>
+                      )}
+                    </div>
+                  </td> }
+               
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-center mt-6 text-sm text-gray-600 gap-4">
         <div>
           Showing {pageStartIndex + 1} to{" "}
@@ -286,7 +310,8 @@ console.log(filtered.filter(v=>v.status==="IN_PROGRESS"))
           </button>
         </div>
       </div>
-      <AddVehicleModal isOpen={showModal} onClose={() => setShowModal(false)} />{" "}
+
+      <AddVehicleModal isOpen={showModal} onClose={() => setShowModal(false)} />
     </div>
   );
 };

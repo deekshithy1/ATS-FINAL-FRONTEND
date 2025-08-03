@@ -44,7 +44,9 @@ export default function TestPage() {
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Select Test Type</h2>
         
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Visual Test */}
+          {/* Visual Test */}{
+            user?.role==="MVI" &&
+          
           <div 
             onClick={() => navigate("/visualtest")}
             className="group cursor-pointer bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 rounded-lg p-6 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1"
@@ -69,8 +71,9 @@ export default function TestPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
+          
           </div>
-
+}
           {/* Functional Test */}
           <div 
             onClick={() => navigate("/functionaltest")}
