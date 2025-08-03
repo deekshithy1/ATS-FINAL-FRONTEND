@@ -56,10 +56,11 @@ const VisualTestForm = ({
   onSubmit, 
   onCancel, 
   onClearForm,
-  submitting 
+  submitting ,
+  handleApproveALL
 }) => {
   const hasRules = Object.keys(visualRules).length > 0;
-
+  
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
       <div className="flex justify-between items-center mb-6">
@@ -69,6 +70,9 @@ const VisualTestForm = ({
           className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
         >
           Clear Form
+        </button>
+        <button onClick={handleApproveALL}>
+          APPROVE ALL
         </button>
       </div>
 
